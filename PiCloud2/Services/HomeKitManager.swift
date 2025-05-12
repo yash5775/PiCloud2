@@ -18,8 +18,8 @@ class HomeKitManager: NSObject, ObservableObject {
     }
     
     func togglePlug(_ accessory: HMAccessory) {
-        guard let characteristic = accessory.find(serviceType: HMServiceTypePowerOutlet,
-                                                characteristicType: HMCharacteristicTypeOn) else {
+        guard let characteristic = accessory.find(serviceType: HMServiceTypeOutlet,
+                                                characteristicType: HMCharacteristicTypePowerState) else {
             self.error = "Could not find power characteristic"
             return
         }
@@ -39,7 +39,7 @@ extension HomeKitManager: HMHomeManagerDelegate {
             self.home = primaryHome
             self.accessories = primaryHome.accessories.filter { accessory in
                 accessory.services.contains { service in
-                    service.serviceType == HMServiceTypePowerOutlet
+                    service.serviceType == HMServiceTypeOutlet
                 }
             }
             self.isAuthorized = true

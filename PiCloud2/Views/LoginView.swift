@@ -6,49 +6,11 @@
 //
 
 import SwiftUI
-import LocalAuthentication
 
 struct LoginView: View {
-    @AppStorage("username") private var username = ""
-    @AppStorage("serverURL") private var serverURL = ""
-    @AppStorage("isLoggedIn") private var isLoggedIn = false
-    @AppStorage("useBiometrics") private var useBiometrics = false
-    
-    @State private var password = ""
-    @State private var showAlert = false
-    @State private var alertTitle = "Login Error"
-    @State private var alertMessage = ""
-    @State private var isLoggingIn = false
-    @State private var navigateToDashboard = false
-    
-    // Keychain helper for secure credential storage
-    private let keychainHelper = KeychainHelper()
-    
-    // Available biometric type
-    private var biometricType: BiometricAuthHelper.BiometricType {
-        BiometricAuthHelper.getBiometricType()
-    }
     
     var body: some View {
-        NavigationStack {
-            ResponsiveContainer {
-                VStack(spacing: HIGConstants.Spacing.large) {
-                    // Header with logo
-                    VStack(spacing: HIGConstants.Spacing.medium) {
-                        Image(systemName: "cloud")
-                            .font(.system(size: 60))
-                            .foregroundColor(AppColors.primary)
-                            .frame(minWidth: HIGConstants.minimumTouchTargetSize, minHeight: HIGConstants.minimumTouchTargetSize)
-                            .padding()
-                        
-                        Text("PiCloud Login")
-                            .titleStyle()
-                        
-                        Text("Connect to your WebDAV server")
-                            .captionStyle()
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                    }
+        Text("Login View")
                     .padding(.bottom)
                     
                     // Login form

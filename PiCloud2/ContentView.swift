@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  PiCloud2
+//  PiCloud
 //
 //  Created by Chaniyara Yash on 12/05/25.
 //
@@ -8,141 +8,59 @@
 import SwiftUI
 
 struct ContentView: View {
-    @AppStorage("isLoggedIn") private var isLoggedIn = false
-    @EnvironmentObject private var homeKitManager: HomeKitManager
-    
     var body: some View {
-        Group {
-            if isLoggedIn {
-                NavigationStack {
-                    ScrollView {
-                        ResponsiveContainer {
-                            VStack(spacing: HIGConstants.Spacing.large) {
-                                // Header section with proper typography
-                                VStack(spacing: HIGConstants.Spacing.medium) {
-                                    Image(systemName: "cloud")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(AppColors.primary)
-                                        .frame(minWidth: HIGConstants.minimumTouchTargetSize, minHeight: HIGConstants.minimumTouchTargetSize)
-                                        .padding()
-                                    
-                                    Text("Welcome to PiCloud")
-                                        .titleStyle()
-                                    
-                                    Text("Your personal cloud storage solution")
-                                        .captionStyle()
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal)
-                                }
-                                
-                                // Search field with proper touch target size
-                                AppTextField(placeholder: "Search files", text: $searchText)
-                                
-                                // Card examples with proper spacing and contrast
-                                CardView {
-                                    VStack(alignment: .leading, spacing: HIGConstants.Spacing.medium) {
-                                        Text("Quick Access")
-                                            .headlineStyle()
-                                        
-                                        HStack(spacing: HIGConstants.Spacing.medium) {
-                                            ForEach(["doc.fill", "photo", "video", "music.note"], id: \.self) { icon in
-                                                VStack {
-                                                    Image(systemName: icon)
-                                                        .font(.system(size: 24))
-                                                        .foregroundColor(AppColors.primary)
-                                                        .frame(width: HIGConstants.minimumTouchTargetSize, height: HIGConstants.minimumTouchTargetSize)
-                                                        .background(AppColors.secondaryBackground)
-                                                        .cornerRadius(HIGConstants.CornerRadius.small)
-                                                    
-                                                    Text(iconName(for: icon))
-                                                        .captionStyle()
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                // List items with proper touch targets
-                                VStack(spacing: 0) {
-                                    Text("Recent Files")
-                                        .headlineStyle()
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.bottom, HIGConstants.Spacing.small)
-                                    
-                                    ForEach(["Document.pdf", "Image.jpg", "Presentation.key"], id: \.self) { filename in
-                                        ListItemView {
-                                            HStack {
-                                                Image(systemName: iconForFile(filename))
-                                                    .foregroundColor(AppColors.primary)
-                                                
-                                                Text(filename)
-                                                    .bodyStyle()
-                                                
-                                                Spacer()
-                                                
-                                                Image(systemName: "chevron.right")
-                                                    .foregroundColor(AppColors.secondaryLabel)
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                // Settings section with toggle
-                                VStack(alignment: .leading, spacing: HIGConstants.Spacing.medium) {
-                                    Text("Settings")
-                                        .headlineStyle()
-                                    
-                                    AppToggle(title: "Enable Notifications", isOn: $isToggleOn)
-                                }
-                                
-                                // Buttons with proper styling
-                                HStack(spacing: HIGConstants.Spacing.medium) {
-                                    Button("Upload") {}
-                                        .buttonStyle(PrimaryButtonStyle())
-                                        .frame(maxWidth: .infinity)
-                                    
-                                    Button("Share") {}
-                                        .buttonStyle(SecondaryButtonStyle())
-                                        .frame(maxWidth: .infinity)
-                                }
-                            }
-                            .padding(.vertical, HIGConstants.Spacing.large)
-                        }
+        NavigationView {
+            VStack(spacing: 20) {
+                Image(systemName: "cloud")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 100, height: 100)
+                    .foregroundStyle(.blue)
+                    .accessibilityLabel("PiCloud logo")
+                
+                Text("Welcome to PiCloud")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.primary)
+                    .accessibilityAddTraits(.isHeader)
+                
+                Text("Your personal cloud storage solution")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                
+                Spacer().frame(height: 20)
+                
+                NavigationLink(destination: LoginView()) {
+                    HStack {
+                        Text("Sign In")
+                            .font(.headline)
+                            .foregroundColor(.white)
                     }
-                    .navigationTitle("PiCloud")
-                    .background(AppColors.background)
+                    .frame(minWidth: 200, minHeight: 44) // Ensures minimum 44pt hit target
+                    .background(Color.blue)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 20)
+                    .accessibilityIdentifier("signInButton")
                 }
-            } else {
-                LoginView()
+                
+                Button(action: {}) {
+                    Text("Create Account")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                        .frame(minWidth: 200, minHeight: 44) // Ensures minimum 44pt hit target
+                        .background(Color.clear)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.blue, lineWidth: 2)
+                        )
+                        .accessibilityIdentifier("createAccountButton")
+                }
             }
-        }
-        .onAppear {
-            if isLoggedIn {
-                homeKitManager.requestAccess()
-            }
-        }
-    }
-    
-    // Helper functions
-    private func iconName(for systemName: String) -> String {
-        switch systemName {
-        case "doc.fill": return "Documents"
-        case "photo": return "Photos"
-        case "video": return "Videos"
-        case "music.note": return "Audio"
-        default: return ""
-        }
-    }
-    
-    private func iconForFile(_ filename: String) -> String {
-        if filename.hasSuffix(".pdf") {
-            return "doc.fill"
-        } else if filename.hasSuffix(".jpg") || filename.hasSuffix(".png") {
-            return "photo"
-        } else if filename.hasSuffix(".key") {
-            return "chart.bar.doc.horizontal"
-        } else {
-            return "doc"
+            .padding(.vertical, 40)
+            .frame(maxWidth: .infinity)
+            .background(Color(UIColor.systemBackground))
+            .navigationBarHidden(true)
         }
     }
 }
