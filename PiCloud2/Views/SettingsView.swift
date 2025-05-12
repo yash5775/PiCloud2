@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import HomeKit
 
 struct SettingsView: View {
     @AppStorage("username") private var username = ""
@@ -17,6 +18,7 @@ struct SettingsView: View {
     @State private var showAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
+    @StateObject private var homeKitManager = HomeKitManager()
     
     var body: some View {
         NavigationStack {
@@ -57,27 +59,49 @@ struct SettingsView: View {
                         .padding(.vertical, HIGConstants.Spacing.small)
                     }
                     
+                    // HomeKit Section
+                    Section(header: Text("HomeKit")) {
+                        if homeKitManager.isAuthorized {
+                            ForEach(homeKitManager.accessories, id: \.uniqueIdentifier) { accessory in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(accessory.name)
+                                        if let room = accessory.room {
+                                            Text(room.name)
+                                                .font(.caption)
+                                                .foregroundColor(AppColors.secondaryLabel)
+                                        }
+                                    }
+                                    Spacer()
+                                    Button(action: { homeKitManager.togglePlug(accessory) }) {
+                                        Image(systemName: "power")
+                                            .frame(minWidth: HIGConstants.minimumTouchTargetSize, minHeight: HIGConstants.minimumTouchTargetSize)
+                                    }
+                                }
+                            }
+                        } else {
+                            Button("Request HomeKit Access") {
+                                homeKitManager.requestAccess()
+                            }
+                        }
+                    }
+                    
                     // Server Control Section
                     Section(header: Text("Server Control")) {
-                        Button(action: { sendServerCommand(command: "restart") }) {
-                            HStack {
-                                Image(systemName: "arrow.clockwise")
-                                Text("Restart Server")
-                            }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        }
-                        .buttonStyle(SecondaryButtonStyle())
-                        .padding(.vertical, HIGConstants.Spacing.small)
-                        
-                        Button(action: { sendServerCommand(command: "shutdown") }) {
+                        Button(action: shutdownServer) {
                             HStack {
                                 Image(systemName: "power")
                                 Text("Shutdown Server")
                             }
-                            .frame(maxWidth: .infinity, alignment: .center)
+                            .foregroundColor(.red)
                         }
-                        .buttonStyle(SecondaryButtonStyle())
-                        .padding(.vertical, HIGConstants.Spacing.small)
+                        
+                        Button(action: restartServer) {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Restart Server")
+                            }
+                        }
                     }
                     
                     // Account Section
@@ -102,6 +126,70 @@ struct SettingsView: View {
         }
     }
     
+    private func shutdownServer() {
+        guard let url = URL(string: "http://\(raspberryPiIP):5000/shutdown") else {
+            showError("Invalid server URL")
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiToken)", forHTTPHeaderField: "Authorization")
+        
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    showError(error.localizedDescription)
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse,
+                   httpResponse.statusCode == 200 {
+                    alertTitle = "Success"
+                    alertMessage = "Server shutdown initiated"
+                    showAlert = true
+                } else {
+                    showError("Server shutdown failed")
+                }
+            }
+        }.resume()
+    }
+    
+    private func restartServer() {
+        guard let url = URL(string: "http://\(raspberryPiIP):5000/restart") else {
+            showError("Invalid server URL")
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiToken)", forHTTPHeaderField: "Authorization")
+        
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    showError(error.localizedDescription)
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse,
+                   httpResponse.statusCode == 200 {
+                    alertTitle = "Success"
+                    alertMessage = "Server restart initiated"
+                    showAlert = true
+                } else {
+                    showError("Server restart failed")
+                }
+            }
+        }.resume()
+    }
+    
+    private func showError(_ message: String) {
+        alertTitle = "Error"
+        alertMessage = message
+        showAlert = true
+    }
+    
     // Toggle smart plug using Siri Shortcuts
     private func toggleSmartPlug() {
         guard let shortcutURL = URL(string: "shortcuts://run-shortcut?name=\(shortcutName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") else {
@@ -118,29 +206,6 @@ struct SettingsView: View {
                 showAlert = true
             }
         }
-    }
-    
-    // Send command to server (restart/shutdown)
-    private func sendServerCommand(command: String) {
-        guard !raspberryPiIP.isEmpty else {
-            alertTitle = "Error"
-            alertMessage = "Please enter Raspberry Pi IP address"
-            showAlert = true
-            return
-        }
-        
-        guard !apiToken.isEmpty else {
-            alertTitle = "Error"
-            alertMessage = "Please enter API token"
-            showAlert = true
-            return
-        }
-        
-        // In a real implementation, this would send a request to the server
-        // For now, just show a success message
-        alertTitle = "Success"
-        alertMessage = "\(command.capitalized) command sent to server"
-        showAlert = true
     }
     
     // Logout function
